@@ -1,0 +1,9 @@
+.venv/
+__pycache__/
+*.pyc
+
+.DS_Store
+
+# Generated output, not source
+*.pdf
+/output/

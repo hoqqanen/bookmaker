@@ -1,0 +1,6 @@
+weasyprint>=69
+ebooklib>=0.18
+beautifulsoup4>=4.12
+lxml>=5.0
+click>=8.1
+pypdf>=6.0
