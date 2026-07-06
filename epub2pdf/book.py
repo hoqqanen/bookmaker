@@ -24,9 +24,21 @@ from .imposition import SHEET_SIZES_MM, impose_booklet
     type=int,
     default=8,
     show_default=True,
-    help="Target page count per signature; see `impose --help` for how balancing works.",
+    help="Target number of physical SHEETS of paper per signature (each sheet = "
+    "4 content pages once folded, so the default is 32 content pages per "
+    "signature); see `impose --help` for how balancing works.",
 )
-@click.option("--output-prefix", default="signature", show_default=True)
+@click.option("--output-name", default="book_imposed.pdf", show_default=True, help="Filename for the imposed PDF.")
+@click.option(
+    "--sheet-order",
+    type=click.Choice(["innermost-first", "outermost-first"]),
+    default="innermost-first",
+    show_default=True,
+    help="Print order of sheets within a signature. 'innermost-first' means the "
+    "sheets come off the printer already nested in fold order (correct for "
+    "printers that stack each new sheet on top of the previous ones); use "
+    "'outermost-first' if your printer/workflow stacks the other way.",
+)
 @click.option(
     "--keep-flat-pdf/--no-keep-flat-pdf",
     default=True,
@@ -56,13 +68,14 @@ def main(
     title_page,
     sheet_size,
     signature_size,
-    output_prefix,
+    output_name,
+    sheet_order,
     keep_flat_pdf,
 ):
-    """Convert EPUB_PATH straight to signature booklets in OUTPUT_DIR: runs
-    the epub->pdf conversion (defaulting to A5 pages, since that's what
-    tiles exactly 2-up onto A4), then imposes the result into signatures
-    ready to print, fold, and bind.
+    """Convert EPUB_PATH straight to a signature-imposed booklet PDF in
+    OUTPUT_DIR: runs the epub->pdf conversion (defaulting to A5 pages, since
+    that's what tiles exactly 2-up onto A4), then imposes the result into
+    signatures ready to print, fold, and bind.
     """
     if signature_size < 1:
         raise click.BadParameter("--signature-size must be at least 1")
@@ -100,16 +113,17 @@ def main(
     )
 
     click.echo("Imposing signatures ...")
-    paths = impose_booklet(
+    output_path = os.path.join(output_dir, output_name)
+    impose_booklet(
         flat_pdf_path,
-        output_dir,
-        signature_size=signature_size,
+        output_path,
+        sheets_per_signature=signature_size,
         sheet_size=sheet_size,
-        output_prefix=output_prefix,
+        print_innermost_first=(sheet_order == "innermost-first"),
     )
-    for p in paths:
-        click.echo(f"Wrote {p}")
-    click.echo(f"See {output_dir}/PRINTING_INSTRUCTIONS.txt for folding/binding order.")
+    instructions_path = os.path.splitext(output_path)[0] + "_INSTRUCTIONS.txt"
+    click.echo(f"Wrote {output_path}")
+    click.echo(f"See {instructions_path} for folding/binding order.")
 
     if not keep_flat_pdf:
         os.remove(flat_pdf_path)
