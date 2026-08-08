@@ -4,3 +4,4 @@ beautifulsoup4>=4.12
 lxml>=5.0
 click>=8.1
 pypdf>=6.0
+cryptography>=3.1
